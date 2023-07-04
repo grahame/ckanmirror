@@ -58,14 +58,18 @@ def mirror(destination, remote, package):
     resoures = package["resources"]
 
     tmp_dir = safe_mkdir(os.path.join(destination, "tmp"))
-    remote_dir = safe_mkdir(os.path.join(destination, slugify(remote)))
+    remote_dir = safe_mkdir(os.path.join(destination, slugify(remote.address)))
     package_dir = safe_mkdir(os.path.join(remote_dir, slugify(package["id"])))
 
     for resource in resoures:
         resource_dir = safe_mkdir(os.path.join(package_dir, slugify(resource["id"])))
 
-        meta_fname = "{}.json".format(slugify(resource["id"]))
-        meta_tmp = os.path.join(tmp_dir, meta_fname)
+        package_fname = "package-{}.json".format(slugify(package["id"]))
+        package_tmp = os.path.join(tmp_dir, package_fname) + ".tmp"
+        package_dest = os.path.join(resource_dir, package_fname)
+
+        meta_fname = "resource-{}.json".format(slugify(resource["id"]))
+        meta_tmp = os.path.join(tmp_dir, meta_fname) + ".tmp"
         meta_dest = os.path.join(resource_dir, meta_fname)
 
         if os.access(meta_dest, os.R_OK):
@@ -74,24 +78,27 @@ def mirror(destination, remote, package):
         resource_metadata = remote.action.resource_show(id=resource["id"])
         with open(meta_tmp, "w") as f:
             json.dump(resource_metadata, f)
+        with open(package_tmp, "w") as f:
+            json.dump(package, f)
 
         data_fname = resource["url"].split("/")[-1]
-        data_tmp = os.path.join(tmp_dir, data_fname)
+        data_tmp = os.path.join(tmp_dir, data_fname) + ".tmp"
         data_dest = os.path.join(resource_dir, data_fname)
         with open(data_tmp, "wb") as f:
             print(resource["url"], humanize.naturalsize(resource["size"] or 0))
             download_file(resource["url"], f)
 
         os.rename(data_tmp, data_dest)
+        os.rename(package_tmp, package_dest)
         os.rename(meta_tmp, meta_dest)
 
 
 def cli():
     # we expect to find a ckanmirror.json file in the current directory
-    if not os.access("ckanmirror.json", os.R_OK):
-        raise RuntimeError("ckanmirror.json not found in current directory")
+    if not os.access(CONFIG_FILE, os.R_OK):
+        raise RuntimeError("{} not found in current directory".format(CONFIG_FILE))
 
-    with open("ckanmirror.json") as f:
+    with open(CONFIG_FILE) as f:
         config = json.load(f)
 
     remote = ckanapi.RemoteCKAN(config["remote"], apikey=config["apikey"])
