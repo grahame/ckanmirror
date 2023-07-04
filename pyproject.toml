@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "ckanmirror"
+version = "0.1.0"
+description = ""
+authors = ["Grahame Bowland <grahame@bowland.au>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+ckanapi = "^4.7"
+requests = "^2.31.0"
+humanize = "^4.7.0"
+tqdm = "^4.65.0"
+
+[tool.poetry.scripts]
+ckanmirror = 'ckanmirror.cli:cli'
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | tests/.*/setup.py
+)/
+'''
